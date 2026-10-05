@@ -16,7 +16,8 @@ UA = {"User-Agent": "kangneow-screener/1.0"}
 FAPI = "https://fapi.binance.com"
 ARCH = "https://data.binance.vision/data/futures/um"
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".cache")
-SKIP = {"BTC", "ETH", "BNB", "SOL", "XRP", "DOGE", "USDC", "FDUSD"}
+SKIP = {"BTC", "ETH", "BNB", "SOL", "XRP", "DOGE", "USDC", "FDUSD",
+        "XAU", "XAG", "XPT", "XPD", "PAXG", "XAUT"}  # 대형 코인, 스테이블, 원자재
 
 
 def get(url, tries=3):
@@ -63,7 +64,8 @@ def korean_listed():
 def api_symbols():
     info = json.loads(get(f"{FAPI}/fapi/v1/exchangeInfo"))
     return [s["symbol"] for s in info["symbols"]
-            if s.get("contractType") == "PERPETUAL" and s.get("quoteAsset") == "USDT" and s.get("status") == "TRADING"]
+            if s.get("contractType") == "PERPETUAL" and s.get("quoteAsset") == "USDT" and s.get("status") == "TRADING"
+            and s.get("underlyingType", "COIN") == "COIN"]  # 주식·원자재 선물 제외
 
 
 def api_klines(sym, interval, limit):
@@ -182,8 +184,11 @@ def analyze(sym, daily, h4, btc_ret7, a):
     flags = []
     if always_big: flags.append("원래 거래량 큰 코인")
     if len(recent) == 1: flags.append("폭발 1번뿐")
-    if runup >= 8: flags.append(f"바닥 대비 {runup:.0f}배(대장 추종형만)")
-    if mdd >= 0.5: flags.append(f"폭발 후 최대 -{mdd*100:.0f}%(급락 무빙)")
+    if runup >= 8: flags.append(f"바닥 대비 {runup:.0f}배 · 이미 크게 오름")
+    if mdd >= 0.5: flags.append(f"폭발 후 최대 낙폭 -{mdd*100:.0f}%")
+    H = [r[2] for r in daily]; L = [r[3] for r in daily]; O = [r[1] for r in daily]
+    wicks = sum(1 for i in range(n - 30, n) if (H[i] - max(O[i], C[i])) / C[i] >= 0.25 or (min(O[i], C[i]) - L[i]) / C[i] >= 0.25)
+    if wicks >= 3: flags.append(f"25% 넘는 꼬리 {wicks}일(무빙 거침)")
     if from_hi <= -0.4: flags.append("고점 대비 -40% 이하")
     if btc_ret7 is not None and btc_ret7 < -0.03 and ret7 > btc_ret7 + 0.05: flags.append("BTC 하락 중 버팀")
     if pos >= 0.85 and C[-1] < hi_since * 0.98: flags.append("10일 박스 상단")
