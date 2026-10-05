@@ -18,6 +18,10 @@ ARCH = "https://data.binance.vision/data/futures/um"
 CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".cache")
 SKIP = {"BTC", "ETH", "BNB", "SOL", "XRP", "DOGE", "USDC", "FDUSD",
         "XAU", "XAG", "XPT", "XPD", "PAXG", "XAUT"}  # 대형 코인, 스테이블, 원자재
+# 아카이브 방식에는 종목 종류 정보가 없어서, 알려진 주식·ETF 선물을 따로 뺌 (실시간 방식은 자동으로 걸러짐)
+STOCKS = {"AAPL", "AMZN", "GOOGL", "GOOG", "META", "MSFT", "NVDA", "TSLA", "AMD", "INTC", "MU", "SNDK", "MSTR",
+          "COIN", "HOOD", "CRCL", "PLTR", "NFLX", "AVGO", "ORCL", "QQQ", "SPY", "TQQQ", "SQQQ", "SOXL", "SOXS",
+          "SNXX", "MUU", "IBM", "BABA", "TSM", "ARM", "SMCI", "GME", "AMC", "UBER", "DIS", "JPM", "V", "MA"}
 
 
 def get(url, tries=3):
@@ -225,7 +229,8 @@ def main():
         start = asof - dt.timedelta(days=110)
         fetch_d = lambda s: arch_klines(s, "1d", start, asof)
         fetch_4 = lambda s: arch_klines(s, "4h", asof - dt.timedelta(days=4), asof)
-    cand = [s for s in syms if base_asset(s) not in SKIP and (a.include_kr or base_asset(s) not in kr)]
+    skip = SKIP | (STOCKS if a.source == "archive" else set())
+    cand = [s for s in syms if base_asset(s) not in skip and (a.include_kr or base_asset(s) not in kr)]
     print(f"[{a.source}] 기준일 {asof} · 대상 {len(cand)}개 (국내 상장 {'포함' if a.include_kr else '제외'}) · 폭발 기준 {a.vol:.0f}M", file=sys.stderr)
 
     btc = fetch_d("BTCUSDT")
