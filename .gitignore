@@ -1,2 +1,3 @@
 tools/.cache/
 screener_result*.csv
+__pycache__/
