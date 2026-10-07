@@ -15,6 +15,8 @@
 python tools/screener.py
 ```
 
+Windows에서는 `screener.py`와 같은 폴더에 둔 `run_screener.bat`을 더블클릭해도 돼요.
+
 - 바이낸스 실시간 API로 지금 시세를 받아요. 한국에서는 바로 돼요.
 - 1~3분쯤 걸리고, 결과는 화면과 `screener_result.csv`에 나와요. CSV는 엑셀로 열면 돼요.
 
