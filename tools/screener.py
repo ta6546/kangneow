@@ -215,6 +215,7 @@ def main():
     ap.add_argument("--include-kr", action="store_true", help="업비트·빗썸 상장 코인도 보여주기")
     ap.add_argument("--include-big", action="store_true", help="원래 거래량이 큰 코인도 보여주기")
     ap.add_argument("--out", default="screener_result.csv", help="CSV 저장 경로")
+    ap.add_argument("--log", help="실행할 때마다 후보를 덧붙일 누적 기록 CSV (예: tools/scan_log.csv)")
     a = ap.parse_args()
 
     kr = korean_listed()
@@ -264,6 +265,24 @@ def main():
              " · ".join(r["flags"])] for r in res]
     with open(a.out, "w", newline="", encoding="utf-8-sig") as f:
         csv.writer(f).writerows([hdr] + rows)
+    if a.log:
+        # 누적 기록: 실행할 때마다 후보를 한 줄씩 덧붙이고, 최근 14일 동안 처음 보는 종목은 '새 후보'로 표시
+        now = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)
+        seen = {}
+        if os.path.exists(a.log):
+            with open(a.log, encoding="utf-8-sig") as f:
+                for row in csv.DictReader(f):
+                    seen[row["종목"]] = max(seen.get(row["종목"], ""), row["시각(KST)"])
+        cutoff = (now - dt.timedelta(days=14)).strftime("%Y-%m-%d %H:%M")
+        new = not os.path.exists(a.log)
+        with open(a.log, "a", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f)
+            if new:
+                w.writerow(["시각(KST)", "새 후보", "데이터"] + hdr)
+            for row in rows:
+                fresh = "새 후보" if seen.get(row[0], "") < cutoff else ""
+                w.writerow([now.strftime("%Y-%m-%d %H:%M"), fresh, a.source] + row)
+        print(f"기록 추가: {a.log} ({len(rows)}줄, 새 후보 {sum(1 for row in rows if seen.get(row[0], '') < cutoff)}개)")
     print(f"\n{len(res)}개 · BTC 7일 {btc_ret7*100:+.1f}% · CSV: {a.out}\n")
     for r in rows:
         print(f"{r[0]:<12} 폭발 {r[2]}회 ({r[3]}~{r[4]}, 최대 {r[5]}M) · 바닥 대비 {r[7]} · 고점 대비 {r[8]} · 박스 {r[9]} · 7일 {r[10]}\n             {r[13]}")

@@ -2,3 +2,5 @@ tools/.cache/
 screener_result*.csv
 __pycache__/
 tools/sync_error.log
+tools/scan_latest.csv
+tools/scan_log.csv

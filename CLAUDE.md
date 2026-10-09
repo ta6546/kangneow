@@ -39,3 +39,12 @@
 - 이전 판단이 틀렸으면 분명히 정정하세요.
 - 추정은 추정이라고 표시하세요. 데이터에 없는 숫자를 만들지 마세요.
 - 검토한 종목과 판단은 `docs/watchlist.md`에 날짜와 함께 짧게 남기세요(가격, 지켜볼 조건, 판단 이유).
+
+## 자동 기록과 관심 종목
+
+- PC 작업 스케줄러("강고양이 스캔 기록")가 켜져 있는 동안 2시간마다 스크리너를 돌려 `tools/scan_log.csv`에 후보를 쌓아요. "새 후보" 열은 최근 14일 동안 처음 걸린 종목이에요. 스캔할 때 이 기록도 같이 보고, 언제 처음 걸렸는지 알려 주세요.
+- 차트 사이트(https://claude.ai/artifact/YChAmTfMshHDcfBhzHSkit)의 "관심 종목" 탭은 `ArtifactData` 도구로 읽고 써요. 컬렉션 `watch`, 문서 필드: sym, base, added(YYYY-MM-DD), by("부앙단" 또는 "Claude"), status(관찰/진입/탈락/종료), price, stop, plan, reason, updated, log([{at, by, text}]).
+- `/scan`에서 지켜볼 만한 종목이 나오면 `watch`에 추가하고, 이미 있으면 log에 한 줄 덧붙이고 status를 맞춰 주세요. 부앙단님이 직접 넣은 종목도 스캔 때 함께 점검하세요.
+- 관심 종목 탭의 차트는 `docs/kangneow-charts-watch.json`을 읽어요. 관심 종목이 바뀌거나 "관심 종목 차트 갱신"을 요청받으면, `watch` 컬렉션의 base 목록으로 `python tools/watch_charts.py <BASE...>`를 돌린 뒤 `docs/kangneow-charts.html`을 같은 URL로 다시 게시하면서 `files`에 `kangneow-charts-watch.json`을 넣으세요. 페이지에는 받은 시각이 표시돼요.
+- 메인 페이지는 `docs/index.html`이에요. 관심 종목(실시간)·매매일지·거래량 폭발 사례·과거 후보 복기 탭이 한곳에 있고, 모든 차트를 브라우저가 바이낸스 REST와 `wss://fstream.binance.com/market/ws/` 스트림에서 직접 불러와요(상장 폐지된 BDXN·BNC만 `docs/data/fallback.js`). 사례 정보는 `docs/data/records.js`. "사이트 열어줘" 또는 "실시간 사이트 열어줘"라고 하면 `Start-Process docs/index.html`로 열어 주세요(`docs/live.html`은 이 페이지로 넘어가요). 종목 목록은 그 브라우저의 localStorage에 있어요. 처음 목록은 `docs/live-watch.js`(사이트 `watch` 컬렉션을 옮긴 것)에서 불러와요. "관심 종목 동기화"를 요청받으면 `watch` 컬렉션을 읽어 이 파일을 다시 쓰세요(이미 있는 종목은 비어 있는 칸만 채워져요). 특정 종목으로 열려면 `docs/live.html?s=MUBARAK,RAYSOL`처럼 주소 뒤에 붙여요.
+- 연습 노트는 부앙단님이 사이트에서 복사해 채팅에 붙여요. 받으면 피드백하고 `docs/practice-log.md`에 날짜별로 정리하세요.
