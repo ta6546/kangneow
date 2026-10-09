@@ -1,3 +1,4 @@
 tools/.cache/
 screener_result*.csv
 __pycache__/
+tools/sync_error.log
