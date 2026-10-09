@@ -36,6 +36,25 @@ PC에서 Claude Code를 열고 이 저장소 폴더에서 물어보면, Claude�
    ```
 4. 처음 실행하면 브라우저가 열리고 로그인하면 돼요.
 
+## 3-1. 이 대화를 그대로 이어받기 (선택)
+
+지금 클라우드 대화(세션 ID `session_01LuJ1YDoZP1xZYzfs1GwxBL`)를 대화 기록 그대로 PC로 가져올 수 있어요. 이렇게 하면 노트를 다시 읽지 않아도 지금까지의 대화를 그대로 기억한 채 이어서 물어볼 수 있어요.
+
+1. https://git-scm.com/downloads/win 에서 Git for Windows를 설치해요. ZIP으로 받은 폴더는 이 방법에 쓸 수 없어요.
+2. PowerShell에서 저장소를 git으로 받아요.
+   ```
+   cd $HOME\Documents
+   git clone https://github.com/ta6546/kangneow
+   cd kangneow
+   ```
+3. 이 대화를 가져와요. 지금 쓰는 claude.ai 계정으로 로그인돼 있어야 해요.
+   ```
+   claude --teleport session_01LuJ1YDoZP1xZYzfs1GwxBL
+   ```
+   세션 ID를 빼고 `claude --teleport`만 입력하면 목록에서 고를 수도 있어요.
+
+가져온 뒤의 대화는 PC에만 남고, 클라우드 쪽 대화에는 반영되지 않아요. 대화가 아주 길어지면 Claude가 앞부분을 요약해서 기억하기 때문에, 중요한 내용은 지금처럼 노트에도 계속 남겨 두는 게 안전해요.
+
 ## 4. 물어보기
 
 폴더를 열면 Claude가 `CLAUDE.md`를 읽고 이 프로젝트의 기준을 알고 시작해요.
