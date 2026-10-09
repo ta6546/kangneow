@@ -1,0 +1,259 @@
+<title>강고양이 매매 차트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+/* Layout: 위 탭(매매일지 / 거래량 폭발 사례) → 왼쪽 목록 + 오른쪽 캔들 차트. 폰에서는 목록이 위로 */
+:root{
+  --bg:#f6f7f8; --surface:#ffffff; --line:#dfe3e7; --grid:#eceff2;
+  --ink:#14181c; --ink-2:#4d5560; --ink-3:#7d8590;
+  --up:#1baf7a; --down:#e34948; --vol:#c5cbd2; --burst:#eb6834; --accent:#2a78d6; --sel:#e8f0fa;
+  --sans:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121417; --surface:#1a1d21; --line:#2c3138; --grid:#24282e;
+  --ink:#f1f3f5; --ink-2:#b4bbc4; --ink-3:#848c96;
+  --up:#199e70; --down:#e66767; --vol:#3d434b; --burst:#d95926; --accent:#3987e5; --sel:#1e2a3a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121417; --surface:#1a1d21; --line:#2c3138; --grid:#24282e;
+  --ink:#f1f3f5; --ink-2:#b4bbc4; --ink-3:#848c96;
+  --up:#199e70; --down:#e66767; --vol:#3d434b; --burst:#d95926; --accent:#3987e5; --sel:#1e2a3a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;padding:24px 16px 40px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:18px}
+header{display:grid;gap:6px}
+h1{font-size:22px;font-weight:600;margin:0;text-wrap:balance}
+.lede{color:var(--ink-2);margin:0;max-width:72ch}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{font:inherit;font-weight:500;background:none;border:0;border-bottom:2px solid transparent;color:var(--ink-2);padding:8px 12px;cursor:pointer;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .ct{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-left:4px}
+.main{display:grid;grid-template-columns:270px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)}}
+.side{display:grid;gap:10px;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip,.tf,.tog{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:4px 10px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"],.tf[aria-pressed="true"],.tog[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.list{border:1px solid var(--line);background:var(--surface);border-radius:8px;max-height:700px;overflow:auto}
+@media (max-width:860px){.list{max-height:240px}}
+.grp{font-size:11.5px;letter-spacing:.04em;color:var(--ink-3);padding:10px 12px 4px}
+.item{display:grid;grid-template-columns:1fr auto;gap:2px 8px;width:100%;text-align:left;font:inherit;background:none;border:0;border-top:1px solid var(--grid);padding:8px 12px;cursor:pointer;color:var(--ink)}
+.item:hover{background:var(--grid)}
+.item[aria-current="true"]{background:var(--sel)}
+.item .nm{font-weight:600}
+.item .mx{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);text-align:right}
+.item .dt{grid-column:1/-1;color:var(--ink-3);font-size:12px}
+.tag{font-size:11px;color:var(--ink-2);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-left:6px;font-weight:400}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0;display:grid;gap:12px}
+.ttl{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.ttl h2{margin:0;font-size:19px;font-weight:600}
+.ttl .sub{color:var(--ink-2);font-size:13px}
+.sum{margin:0;color:var(--ink-2);max-width:80ch}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px 16px;margin:0}
+.kv div{display:grid;gap:1px;min-width:0}
+.kv dt{font-size:12px;color:var(--ink-3)}
+.kv dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14.5px}
+.bar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between}
+.tfs,.togs{display:flex;gap:6px;flex-wrap:wrap}
+#chart{height:480px;width:100%;position:relative}
+@media (max-width:600px){#chart{height:380px}}
+.legend{font-family:var(--mono);font-size:12px;color:var(--ink-2);min-height:1.5em;font-variant-numeric:tabular-nums}
+.key{display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--ink-2);font-size:12.5px}
+.key span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:9px;height:9px;border-radius:2px;display:inline-block}
+.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
+.links a{color:var(--accent)}
+.empty{color:var(--ink-3);padding:40px 0;text-align:center}
+.foot{color:var(--ink-3);font-size:12.5px;max-width:84ch;margin:0}
+</style>
+<div class="wrap">
+<header>
+  <h1>강고양이 매매 차트</h1>
+  <p class="lede">강고양이님의 공개 매매 15건과, 바이낸스 선물에서 거래대금이 처음 400M을 넘은 뒤 3배 이상 오른 사례를 한곳에 모았어요. 차트는 끌어서 옮기고 휠이나 두 손가락으로 확대할 수 있어요. 지난 기록이고 매수·매도 추천이 아니에요.</p>
+</header>
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" id="tab-trades" aria-selected="true" data-tab="trades">매매일지<span class="ct" id="ct-trades"></span></button>
+  <button class="tab" role="tab" id="tab-cases" aria-selected="false" data-tab="cases">거래량 폭발 사례<span class="ct" id="ct-cases"></span></button>
+</div>
+<div class="main">
+  <aside class="side">
+    <div class="chips" id="chips" role="group" aria-label="목록 거르기" hidden>
+      <button class="chip" id="f-all" aria-pressed="true" data-f="all">전체</button>
+      <button class="chip" id="f-his" aria-pressed="false" data-f="his">강고양이 관련</button>
+      <button class="chip" id="f-nokr" aria-pressed="false" data-f="nokr">국내 미상장</button>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+  <section class="panel">
+    <div class="ttl"><h2 id="t-name"></h2><span class="sub" id="t-sub"></span></div>
+    <p class="sum" id="t-sum"></p>
+    <dl class="kv" id="kv"></dl>
+    <div class="bar">
+      <div class="tfs" role="group" aria-label="시간봉">
+        <button class="tf" id="tf-15m" data-tf="15m" aria-pressed="false">15분</button>
+        <button class="tf" id="tf-1h" data-tf="1h" aria-pressed="false">1시간</button>
+        <button class="tf" id="tf-4h" data-tf="4h" aria-pressed="true">4시간</button>
+        <button class="tf" id="tf-1d" data-tf="1d" aria-pressed="false">일봉</button>
+      </div>
+      <div class="togs">
+        <button class="tog" id="tog-log" aria-pressed="false">로그 눈금</button>
+        <button class="tog" id="tog-fit">전체 보기</button>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div id="chart"></div>
+    <div class="key">
+      <span><i class="sw" style="background:var(--up)"></i>상승봉</span>
+      <span><i class="sw" style="background:var(--down)"></i>하락봉</span>
+      <span><i class="sw" style="background:var(--burst)"></i>일봉 거래대금 400M 이상</span>
+      <span>▲ 진입 · ▼ 청산·글 · ● 참고 시점</span>
+    </div>
+    <div class="links" id="links"></div>
+  </section>
+</div>
+<p class="foot">데이터: data.binance.vision 바이낸스 USDⓈ-M 선물(거래대금 USDT). 시각은 한국 시간. 진입·청산 시각은 글에 나온 것만 표시했고, 모르는 건 "시각 미상"으로 적었어요. 가격선은 본인이 밝힌 평단·청산가·목표가예요. 파이버스는 선물 심볼을 찾지 못해 뺐어요.</p>
+</div>
+<script>
+const LW = window.LightweightCharts;
+let D;
+function start() {
+const $ = id => document.getElementById(id);
+const S = { tab: "trades", filter: "all", tf: "4h", log: false, sel: { trades: D.trades[0].id, cases: D.cases[0].id } };
+try { const s = JSON.parse(localStorage.getItem("kg-chart") || "{}"); Object.assign(S, s); S.sel = Object.assign({ trades: D.trades[0].id, cases: D.cases[0].id }, s.sel); } catch (e) {}
+const save = () => { try { localStorage.setItem("kg-chart", JSON.stringify(S)); } catch (e) {} };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtP = v => v == null ? "-" : v >= 100 ? v.toFixed(1) : v >= 1 ? v.toFixed(3) : Number(v.toPrecision(4)).toString();
+const fmtV = v => v >= 1000 ? (v / 1000).toFixed(2) + "B" : v >= 10 ? Math.round(v) + "M" : v.toFixed(2) + "M";
+const md = d => d ? `${+d.slice(5, 7)}/${+d.slice(8, 10)}` : "-";
+const pct = r => (r >= 1 ? "+" : "") + Math.round((r - 1) * 100) + "%";
+const dateOf = t => new Date(t * 1000).toISOString().slice(0, 16).replace("T", " ");
+
+$("ct-trades").textContent = D.trades.length; $("ct-cases").textContent = D.cases.length;
+
+// ---- 차트 ----
+const box = $("chart");
+const chart = LW.createChart(box, { autoSize: true, localization: { locale: "ko-KR", priceFormatter: v => v < 1e-9 ? "" : fmtP(v) },
+  timeScale: { timeVisible: true, secondsVisible: false, rightOffset: 4 }, crosshair: { mode: 0 },
+  rightPriceScale: { scaleMargins: { top: 0.08, bottom: 0.28 } } });
+const candles = chart.addCandlestickSeries({ priceLineVisible: false });
+const vol = chart.addHistogramSeries({ priceScaleId: "vol", priceFormat: { type: "custom", formatter: v => fmtV(v) }, lastValueVisible: false, priceLineVisible: false });
+chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
+let priceLines = [], volLine = null;
+
+function theme() {
+  chart.applyOptions({
+    layout: { background: { type: "solid", color: css("--surface") }, textColor: css("--ink-3"), fontFamily: css("--mono"), fontSize: 11 },
+    grid: { vertLines: { color: css("--grid") }, horzLines: { color: css("--grid") } },
+    rightPriceScale: { borderColor: css("--line") }, timeScale: { borderColor: css("--line") },
+    crosshair: { vertLine: { color: css("--ink-3"), labelBackgroundColor: css("--ink-2") }, horzLine: { color: css("--ink-3"), labelBackgroundColor: css("--ink-2") } },
+  });
+  candles.applyOptions({ upColor: css("--up"), downColor: css("--down"), borderUpColor: css("--up"), borderDownColor: css("--down"), wickUpColor: css("--up"), wickDownColor: css("--down") });
+}
+const cur = () => (S.tab === "trades" ? D.trades : D.cases).find(x => x.id === S.sel[S.tab]) || (S.tab === "trades" ? D.trades : D.cases)[0];
+
+function draw(fit = true) {
+  const r = cur(), bars = r.tf[S.tf] || [];
+  theme();
+  const px = bars.length ? bars[bars.length - 1][4] : 1, prec = Math.min(8, Math.max(2, 3 - Math.floor(Math.log10(px))));
+  candles.applyOptions({ priceFormat: { type: "price", precision: prec, minMove: 10 ** -prec } });
+  chart.priceScale("right").applyOptions({ mode: S.log ? 1 : 0 });
+  candles.setData(bars.map(b => ({ time: b[0], open: b[1], high: b[2], low: b[3], close: b[4] })));
+  const burst = css("--burst"), vc = css("--vol");
+  vol.setData(bars.map(b => ({ time: b[0], value: b[5], color: S.tf === "1d" && b[5] >= 400 ? burst : vc })));
+  priceLines.forEach(l => candles.removePriceLine(l)); priceLines = [];
+  if (volLine) { vol.removePriceLine(volLine); volLine = null; }
+  for (const l of r.lines || []) priceLines.push(candles.createPriceLine({ price: l.p, title: l.text, color: css("--accent"), lineWidth: 1, lineStyle: 2, axisLabelVisible: true }));
+  if (S.tf === "1d") volLine = vol.createPriceLine({ price: 400, title: "400M", color: css("--ink-2"), lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
+  // 표시 시점을 그 시각이 들어 있는 봉에 맞춤
+  const marks = [];
+  for (const m of r.marks || []) {
+    let i = -1; for (let k = 0; k < bars.length; k++) { if (bars[k][0] <= m.t) i = k; else break; }
+    if (i < 0 || (i === bars.length - 1 && m.t - bars[i][0] > 86400 * 2)) continue;
+    const ent = m.kind === "entry", ex = m.kind === "exit";
+    marks.push({ time: bars[i][0], position: ent ? "belowBar" : "aboveBar", shape: ent ? "arrowUp" : ex ? "arrowDown" : "circle",
+      color: ent ? css("--up") : ex ? css("--down") : css("--accent"), text: m.text });
+  }
+  marks.sort((a, b) => a.time - b.time); candles.setMarkers(marks);
+  $("chart").querySelector(".empty")?.remove();
+  if (!bars.length) { const e = document.createElement("div"); e.className = "empty"; e.textContent = "이 시간봉 데이터가 없어요."; box.append(e); }
+  if (fit) chart.timeScale().fitContent();
+  legend(bars[bars.length - 1]);
+}
+function legend(b) {
+  if (!b) { $("legend").textContent = ""; return; }
+  $("legend").textContent = `${dateOf(b[0])}  시 ${fmtP(b[1])}  고 ${fmtP(b[2])}  저 ${fmtP(b[3])}  종 ${fmtP(b[4])}  거래대금 ${fmtV(b[5])}`;
+}
+chart.subscribeCrosshairMove(p => {
+  const bars = cur().tf[S.tf] || [];
+  if (!p.time) { legend(bars[bars.length - 1]); return; }
+  legend(bars.find(b => b[0] === p.time));
+});
+
+// ---- 목록과 정보 ----
+function pass(e) { if (S.tab !== "cases") return true; if (S.filter === "his") return !!e.his; if (S.filter === "nokr") return !e.kr; return true; }
+function renderList() {
+  const box = $("list"); box.textContent = "";
+  const groups = S.tab === "trades" ? [["", D.trades]] : [["첫 400M 뒤 3배 이상", D.cases.filter(c => c.grp === "main")], ["폭발이 고점 근처에서 나온 사례", D.cases.filter(c => c.grp === "extra")]];
+  for (const [label, items] of groups) {
+    const vis = items.filter(pass); if (!vis.length) continue;
+    if (label) { const h = document.createElement("div"); h.className = "grp"; h.textContent = label; box.append(h); }
+    for (const e of vis) {
+      const b = document.createElement("button"); b.className = "item"; b.id = "it-" + e.id; b.setAttribute("aria-current", e.id === S.sel[S.tab]);
+      if (S.tab === "trades") b.innerHTML = `<span class="nm">${e.name}</span><span class="mx">${e.result}</span><span class="dt">${e.period}</span>`;
+      else b.innerHTML = `<span class="nm">${e.name}${e.his ? `<span class="tag">${e.his}</span>` : ""}</span><span class="mx">${e.grp === "main" ? e.rem.toFixed(1) + "배" : ""}</span><span class="dt">${md(e.f)} 폭발 → ${md(e.p)} 고점${e.f2p != null ? ` · ${e.f2p}일` : ""}</span>`;
+      b.onclick = () => { S.sel[S.tab] = e.id; save(); renderList(); renderInfo(); draw(); };
+      box.append(b);
+    }
+  }
+}
+function renderInfo() {
+  const r = cur();
+  $("t-name").textContent = r.name;
+  if (S.tab === "trades") {
+    $("t-sub").textContent = `${r.sym} · ${r.period} · ${r.result}`;
+    $("t-sum").textContent = r.summary; $("t-sum").hidden = false;
+    $("kv").innerHTML = (r.marks || []).map(m => `<div><dt>${m.kind === "entry" ? "진입" : m.kind === "exit" ? "청산·글" : "참고"}</dt><dd>${dateOf(m.t).slice(5)}</dd></div>`).join("")
+      + (r.lines || []).map(l => `<div><dt>${l.text.replace(/[\d.]+$/, "").trim() || "가격"}</dt><dd>${fmtP(l.p)}</dd></div>`).join("");
+    $("links").innerHTML = r.posts.map((u, i) => `<a href="${u}" target="_blank" rel="noopener">원문 글 ${r.posts.length > 1 ? i + 1 : ""}</a>`).join("");
+  } else {
+    $("t-sub").textContent = [r.sym, r.his && "강고양이 " + r.his, r.kr && r.kr + " 상장", r.grp === "extra" && "표 밖 사례"].filter(Boolean).join(" · ");
+    $("t-sum").hidden = true;
+    const kv = [["첫 400M 날", r.f || "-"], ["그날 종가", fmtP(r.fc)], ["고점(종가)", `${fmtP(r.pc)} · ${md(r.p)}`],
+      ["폭발 → 고점", r.rem != null ? `${r.rem.toFixed(1)}배 · ${r.f2p}일` : "-"], ["고점까지 400M 날", r.n != null ? r.n + "일" : "-"],
+      ["폭발 후 최저", r.shake == null ? "-" : r.shake >= 0.995 ? "폭발일 아래로 안 감" : pct(r.shake)]];
+    $("kv").innerHTML = kv.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+    $("links").innerHTML = "";
+  }
+}
+function setTab(t) {
+  S.tab = t; save();
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  $("chips").hidden = t !== "cases";
+  renderList(); renderInfo(); draw();
+}
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+  S.filter = c.dataset.f; save();
+  document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x === c));
+  const vis = D.cases.filter(pass); if (vis.length && !vis.some(x => x.id === S.sel.cases)) S.sel.cases = vis[0].id;
+  renderList(); renderInfo(); draw();
+});
+document.querySelectorAll(".tf").forEach(b => b.onclick = () => {
+  S.tf = b.dataset.tf; save();
+  document.querySelectorAll(".tf").forEach(x => x.setAttribute("aria-pressed", x === b)); draw();
+});
+$("tog-log").onclick = () => { S.log = !S.log; save(); $("tog-log").setAttribute("aria-pressed", S.log); draw(false); };
+$("tog-fit").onclick = () => chart.timeScale().fitContent();
+document.querySelectorAll(".tf").forEach(x => x.setAttribute("aria-pressed", x.dataset.tf === S.tf));
+document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x.dataset.f === S.filter));
+$("tog-log").setAttribute("aria-pressed", S.log);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw(false));
+new MutationObserver(() => draw(false)).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+setTab(S.tab);
+}
+fetch("kangneow-charts-data.json").then(r => r.json()).then(d => { D = d; start(); })
+  .catch(() => { document.getElementById("t-name").textContent = "차트 데이터를 불러오지 못했어요. 새로고침해 보세요."; });
+</script>
