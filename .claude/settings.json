@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/on_return.py\" || python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/on_return.py\"",
+            "timeout": 60,
+            "statusMessage": "노트 최신화 확인 중"
+          }
+        ]
+      }
+    ]
+  }
+}

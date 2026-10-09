@@ -49,3 +49,7 @@
 - 메인 페이지는 `docs/index.html`이에요. 관심 종목(실시간)·매매일지·거래량 폭발 사례·과거 후보 복기 탭이 한곳에 있고, 모든 차트를 브라우저가 바이낸스 REST와 `wss://fstream.binance.com/market/ws/` 스트림에서 직접 불러와요(상장 폐지된 BDXN·BNC만 `docs/data/fallback.js`). 사례 정보는 `docs/data/records.js`. "사이트 열어줘" 또는 "실시간 사이트 열어줘"라고 하면 `Start-Process docs/index.html`로 열어 주세요(`docs/live.html`은 이 페이지로 넘어가요). 종목 목록은 그 브라우저의 localStorage에 있어요. 처음 목록은 `docs/live-watch.js`(사이트 `watch` 컬렉션을 옮긴 것)에서 불러와요. "관심 종목 동기화"를 요청받으면 `watch` 컬렉션을 읽어 이 파일을 다시 쓰세요(이미 있는 종목은 비어 있는 칸만 채워져요).
 - 공통 관심 목록 = `docs/live-watch.js`. 관심 종목을 추가·수정하거나, 부앙단님이 페이지의 "공통 목록에 올리기(복사)"로 붙여 준 `[공통 목록 반영]` 글을 받으면 이 파일을 고치고 바로 커밋·푸시하세요(GitHub Pages https://ta6546.github.io/kangneow/ 에 1~2분 뒤 반영). 사이트 `watch` 컬렉션도 같이 맞춰 두세요. PC의 `kangneow-sync` 작업도 3시간마다 docs를 자동으로 올려요. 특정 종목으로 열려면 `docs/live.html?s=MUBARAK,RAYSOL`처럼 주소 뒤에 붙여요.
 - 연습 노트는 부앙단님이 사이트에서 복사해 채팅에 붙여요. 받으면 피드백하고 `docs/practice-log.md`에 날짜별로 정리하세요.
+
+## 돌아왔을 때
+
+`.claude/hooks/on_return.py` 훅이 사용자가 2시간 이상 지나서 말을 걸 때만 `git pull`을 하고 안내 메시지를 넣어요. 그 안내가 보이면 노트를 다시 읽고, 답의 첫 줄에 새로 읽었다는 것과 pull 결과를 짧게 알려 주세요. 연속으로 대화할 때는 다시 읽지 않아도 돼요.
