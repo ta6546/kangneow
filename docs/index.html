@@ -160,7 +160,9 @@ pre{margin:0;white-space:pre-wrap;font-family:var(--mono);font-size:12px;backgro
       <div class="row">
         <input id="w-memo" style="flex:1;min-width:200px" placeholder="메모 (예: 0.080 돌파 실패, 거래량 안 붙음)" aria-label="메모">
         <button class="btn sub" id="w-memo-add" type="button">메모 남기기</button>
+        <button class="btn sub" id="w-share" type="button">공통 목록에 올리기(복사)</button>
         <button class="btn sub" id="w-del" type="button">목록에서 빼기</button>
+        <span class="msg" id="w-msg"></span>
       </div>
     </div>
 
@@ -509,6 +511,14 @@ $("w-del").onclick = () => {
   if ($("w-del").dataset.armed !== r.name) { $("w-del").dataset.armed = r.name; $("w-del").textContent = "한 번 더 누르면 빼요"; return; }
   $("w-del").dataset.armed = ""; $("w-del").textContent = "목록에서 빼기";
   WL = WL.filter(x => x !== r.name); if (!REMOVED.includes(r.name)) REMOVED.push(r.name); ST.sel.watch = null; saveAll(); renderList(); renderInfo(); openChart();
+};
+$("w-share").onclick = () => {
+  const r = cur(); if (!r || !r.watch) return; const w = W[r.name] || {};
+  const t = ["[공통 목록 반영] " + r.name, "- 상태: " + (w.status || "관찰"), "- 추가: " + (w.added || "-") + " (" + (w.by || "-") + ")",
+    "- 추가할 때 가격: " + (w.price || "-") + " · 진입가: " + (w.entry || "-") + " · 손절가: " + (w.stop || "-"),
+    "- 진입 조건: " + (w.plan || "-"), "- 왜 보나요: " + (w.reason || "-")].concat((w.log || []).map(l => "- 기록 " + (l.at || "") + " (" + (l.by || "") + ") " + (l.text || ""))).join("\n");
+  const done = () => { $("w-msg").textContent = "복사했어요. Claude에게 붙여 주세요."; };
+  try { navigator.clipboard.writeText(t).then(done, () => { $("n-fallback").textContent = t; $("n-fallback").hidden = false; $("w-msg").textContent = "아래 연습 노트 칸 밑의 글을 복사해 주세요."; }); } catch (e) { $("n-fallback").textContent = t; $("n-fallback").hidden = false; }
 };
 $("add-form").addEventListener("submit", ev => {
   ev.preventDefault(); const b = $("add-sym").value.trim().toUpperCase().replace(/USDT$/, ""); if (!b) return;
